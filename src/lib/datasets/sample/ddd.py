@@ -123,8 +123,8 @@ class DddDataset(data.Dataset):
           gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
         # if (not self.opt.car_only) or cls_id == 1: # Only estimate ADD for cars !!!
 
-        alphaX = ann['alphax']
-        alphaY = ann['alphay']
+        alphaX = ann['alphax'] % (2*np.pi)
+        alphaY = ann['alphay'] % (2*np.pi)
 
         # BINNING
         bot_thr = np.radians(30)
