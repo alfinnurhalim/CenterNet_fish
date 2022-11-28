@@ -117,27 +117,37 @@ class DddDataset(data.Dataset):
 
         wh[k] = 1. * w, 1. * h
         gt_det.append([ct[0], ct[1], 1] + \
-                      self._alpha_to_8(self._convert_alpha(ann['alpha'])) + \
+                      self._alpha_to_8(self._convert_alpha(ann['alphax'])) + \
                       [ann['depth']] + (np.array(ann['dim']) / 1).tolist() + [cls_id])
         if self.opt.reg_bbox:
           gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
         # if (not self.opt.car_only) or cls_id == 1: # Only estimate ADD for cars !!!
-        if 1:
-          alpha = self._convert_alpha(ann['alpha'])
-          # print('img_id cls_id alpha rot_y', img_path, cls_id, alpha, ann['rotation_y'])
-          if alpha < np.pi / 6. or alpha > 5 * np.pi / 6.:
-            rotbin[k, 0] = 1
-            rotres[k, 0] = alpha - (-0.5 * np.pi)    
-          if alpha > -np.pi / 6. or alpha < -5 * np.pi / 6.:
-            rotbin[k, 1] = 1
-            rotres[k, 1] = alpha - (0.5 * np.pi)
-          dep[k] = ann['depth']
-          dim[k] = ann['dim']
-          # print('        cat dim', cls_id, dim[k])
-          ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
-          reg[k] = ct - ct_int
-          reg_mask[k] = 1 if not aug else 0
-          rot_mask[k] = 1
+
+        alphaX = ann['alphax']
+        alphaY = ann['alphay']
+
+        # BINNING
+        bot_thr = np.radians(30)
+        up_thr = np.radians(150)
+
+        if alphaX < bot_thr or alphaX > up_thr:
+            bin_class = 0
+            rotbin[k, bin_class] = 1
+            rotres[k, bin_class] = alphaX 
+
+        if alphaX < -bot_thr or alphaX > -up_thr:
+            bin_class = 1
+            rotbin[k, bin_class] = 1
+            rotres[k, bin_class] = alphaX 
+
+        dep[k] = ann['depth']
+        dim[k] = ann['dim']
+
+        # print('        cat dim', cls_id, dim[k])
+        ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
+        reg[k] = ct - ct_int
+        reg_mask[k] = 1 if not aug else 0
+        rot_mask[k] = 1
     # print('gt_det', gt_det)
     # print('')
     ret = {'input': inp, 'hm': hm, 'dep': dep, 'dim': dim, 'ind': ind, 
