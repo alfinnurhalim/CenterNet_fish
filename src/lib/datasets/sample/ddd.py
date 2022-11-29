@@ -15,20 +15,35 @@ from utils.image import get_affine_transform, affine_transform
 from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
 import pycocotools.coco as coco
 
+import imgaug.augmenters as iaa
+import imgaug.parameters as iap
+
 class DddDataset(data.Dataset):
+  def __init__(self):
+    points_sampler = iaa.RegularGridPointsSampler(n_cols=80, n_rows=100)
+    self.aug = iaa.Sequential([
+        iaa.Multiply((0.5, 1.5)),
+        iaa.BlendAlphaSimplexNoise(iaa.EdgeDetect(0.4),sigmoid_thresh=iap.Normal(8.0, 7.0)),
+        iaa.AverageBlur(k=(1, 30)),
+        iaa.Voronoi(points_sampler),
+        ] )
+
   def _coco_box_to_bbox(self, box):
     bbox = np.array([box[0], box[1], box[0] + box[2], box[1] + box[3]],
                     dtype=np.float32)
     return bbox
 
   def _convert_alpha(self, alpha):
-    return math.radians(alpha + 45) if self.alpha_in_degree else alpha
+    return math.radians(alpha) if self.alpha_in_degree else alpha
 
   def __getitem__(self, index):
     img_id = self.images[index]
     img_info = self.coco.loadImgs(ids=[img_id])[0]
     img_path = os.path.join(self.img_dir, img_info['file_name'])
     img = cv2.imread(img_path)
+
+    img = self.aug(image=img)
+
     if 'calib' in img_info:
       calib = np.array(img_info['calib'], dtype=np.float32)
     else:
@@ -127,15 +142,16 @@ class DddDataset(data.Dataset):
         alphaY = ann['alphay'] % (2*np.pi)
 
         # BINNING
-        bot_thr = np.radians(30)
-        up_thr = np.radians(150)
+        bot_thr = np.radians(0)
+        up_thr = np.radians(180)
+        max_thr = np.radians(360)
 
-        if alphaX < bot_thr or alphaX > up_thr:
+        if alphaX >= bot_thr and alphaX <= up_thr:
             bin_class = 0
             rotbin[k, bin_class] = 1
             rotres[k, bin_class] = alphaX 
 
-        if alphaX < -bot_thr or alphaX > -up_thr:
+        if alphaX >= up_thr or alphaX <= max_thr:
             bin_class = 1
             rotbin[k, bin_class] = 1
             rotres[k, bin_class] = alphaX 
