@@ -16,7 +16,7 @@ import torch.utils.data as data
 
 class KITTI(data.Dataset):
   num_classes = 3
-  default_resolution = [1024, 1024]
+  default_resolution = [512, 512]
   mean = np.array([0.485, 0.456, 0.406], np.float32).reshape(1, 1, 3)
   std = np.array([0.229, 0.224, 0.225], np.float32).reshape(1, 1, 3)
 
