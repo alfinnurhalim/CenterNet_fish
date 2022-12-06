@@ -35,13 +35,13 @@ class DddDataset(data.Dataset):
     img_path = os.path.join(self.img_dir, img_info['file_name'])
     img = cv2.imread(img_path)
 
-    im_h,im_w,_ = img.shape
-    new_h = int(im_h/ratio)
-    new_w = int(im_w/ratio)
-
     lower_bound = 1
     upper_bound = 5
     ratio = random.uniform(lower_bound, upper_bound)
+
+    im_h,im_w,_ = img.shape
+    new_h = int(im_h/ratio)
+    new_w = int(im_w/ratio)
 
     aug = iaa.Sequential([
             iaa.Multiply((0.5, 1.1)),
