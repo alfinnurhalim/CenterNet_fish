@@ -54,9 +54,14 @@ class DddLoss(torch.nn.Module):
       if opt.reg_offset and opt.off_weight > 0:
         off_loss += self.crit_reg(output['reg'], batch['rot_mask'],
                                   batch['ind'], batch['reg']) / opt.num_stacks
-    loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \
-           opt.dim_weight * dim_loss + opt.rot_weight * rot_loss + \
-           opt.wh_weight * wh_loss + opt.off_weight * off_loss
+    loss = opt.hm_weight * hm_loss
+    loss = loss + opt.off_weight * off_loss
+
+    # other head
+    # loss = loss + opt.dep_weight * dep_loss
+    # loss = loss + opt.dim_weight * dim_loss 
+    # loss = loss + opt.rot_weight * rot_loss
+    # loss = loss + opt.wh_weight * wh_loss
 
     loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss, 
                   'dim_loss': dim_loss, 'rot_loss': rot_loss, 
