@@ -26,6 +26,11 @@ class DddDataset(data.Dataset):
                     dtype=np.float32)
     return bbox
 
+  def _bbs_box_to_bbox(self, box):
+    bbox = np.array([box.x1, box.y1, box.x2, box.y2],
+                    dtype=np.float32)
+    return bbox
+
   def _convert_alpha(self, alpha):
     return math.radians(alpha) if self.alpha_in_degree else alpha
 
@@ -43,14 +48,37 @@ class DddDataset(data.Dataset):
     new_h = int(im_h/ratio)
     new_w = int(im_w/ratio)
 
-    aug = iaa.Sequential([
-            iaa.Multiply((0.5, 1.1)),
-            iaa.AverageBlur(k=(1, 7)),
-            iaa.Resize({"height": new_h, "width": new_w}),
-            iaa.Resize({"height": im_h, "width": im_w}),
-        ] )
+    # aug = iaa.Sequential([
+    #         iaa.Multiply((0.5, 1.1)),
+    #         iaa.AverageBlur(k=(1, 7)),
+    #         iaa.Resize({"height": new_h, "width": new_w}),
+    #         iaa.Resize({"height": im_h, "width": im_w}),
+    #     ] )
 
-    img = aug(image=img)
+    aug = iaa.Sequential([
+              iaa.AddToHueAndSaturation((-30, 30), per_channel=True),
+              iaa.Affine(scale=(0.8,2.0)),
+              iaa.Rot90((1, 3)),
+              iaa.Multiply((0.5, 1.5)),
+              iaa.AverageBlur(k=(1, 20)),
+          ])
+
+    bbox_list = list()
+
+    for k in range(num_objs):
+      ann = anns[k]
+      bbox = self._coco_box_to_bbox(ann['bbox'])
+
+      x1 = bbox[0]
+      y1 = bbox[1]
+      x2 = bbox[2]
+      y2 = bbox[3]
+
+      bbox = BoundingBox(x1=x1,y1=y1,x2=x2,y2=y2)
+      bbox_list.append(bbox)
+
+    bbs = BoundingBoxesOnImage(bbox_list,shape=img.shape)
+    img, bbs_aug = aug(image=img, bounding_boxes=bbs)
 
     if 'calib' in img_info:
       calib = np.array(img_info['calib'], dtype=np.float32)
@@ -108,7 +136,9 @@ class DddDataset(data.Dataset):
     gt_det = []
     for k in range(num_objs):
       ann = anns[k]
-      bbox = self._coco_box_to_bbox(ann['bbox'])
+      # bbox = self._coco_box_to_bbox(ann['bbox'])
+      bbox = self._bbs_box_to_bbox(bbs_aug[k])
+      
       cls_id = int(self.cat_ids[ann['category_id']])
       if cls_id <= -99:
         continue
