@@ -60,10 +60,10 @@ class DddDataset(data.Dataset):
     #     ] )
 
     aug = iaa.Sequential([
-              iaa.AddToHueAndSaturation((-30, 30), per_channel=True),
-              iaa.Affine(scale=(0.8,2.0)),
+              iaa.AddToHueAndSaturation((-40, 30), per_channel=True),
               iaa.Rot90((1, 3)),
-              iaa.Multiply((0.5, 1.5)),
+              iaa.Fliplr(0.5),
+              iaa.Flipud(0.5),
               iaa.AverageBlur(k=(1, 20)),
           ])
 
