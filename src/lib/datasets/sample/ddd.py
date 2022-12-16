@@ -180,7 +180,7 @@ class DddDataset(data.Dataset):
         draw_gaussian(hm[cls_id], ct, radius)
 
         wh[k] = 1. * w, 1. * h
-        bboxs.append([k, ct[0], ct[1], bbox, bbox_converted])
+        bboxs.append([k, ct[0], ct[1], bbox])
         gt_det.append([ct[0], ct[1], 1] + \
                       self._alpha_to_8(self._convert_alpha(ann['alphax'])) + \
                       [ann['depth']] + (np.array(ann['dim']) / 1).tolist() + [cls_id])
