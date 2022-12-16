@@ -63,10 +63,12 @@ class DddDataset(data.Dataset):
 
     aug = iaa.Sequential([
               iaa.AddToHueAndSaturation((-40, 30), per_channel=True),
-              iaa.Rot90((1, 3)),
-              iaa.Fliplr(0.5),
-              iaa.Flipud(0.5),
-              iaa.AverageBlur(k=(1, 20)),
+              # iaa.Rot90((1, 3)),
+              # iaa.Fliplr(0.5),
+              # iaa.Flipud(0.5),
+              iaa.AverageBlur(k=(1, 20))
+              iaa.Resize({"height": new_h, "width": new_w}),
+              iaa.Resize({"height": im_h, "width": im_w}),
           ])
 
     bbox_list = list()
