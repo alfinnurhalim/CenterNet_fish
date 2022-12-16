@@ -46,13 +46,13 @@ class DddDataset(data.Dataset):
     anns = self.coco.loadAnns(ids=ann_ids)
     num_objs = min(len(anns), self.max_objs)
     
-    # lower_bound = 1
-    # upper_bound = 5
-    # ratio = random.uniform(lower_bound, upper_bound)
+    lower_bound = 1
+    upper_bound = 5
+    ratio = random.uniform(lower_bound, upper_bound)
 
-    # im_h,im_w,_ = img.shape
-    # new_h = int(im_h/ratio)
-    # new_w = int(im_w/ratio)
+    im_h,im_w,_ = img.shape
+    new_h = int(im_h/ratio)
+    new_w = int(im_w/ratio)
 
     # aug = iaa.Sequential([
     #         iaa.Multiply((0.5, 1.1)),
@@ -66,7 +66,7 @@ class DddDataset(data.Dataset):
               # iaa.Rot90((1, 3)),
               # iaa.Fliplr(0.5),
               # iaa.Flipud(0.5),
-              iaa.AverageBlur(k=(1, 20))
+              iaa.AverageBlur(k=(1, 20)),
               iaa.Resize({"height": new_h, "width": new_w}),
               iaa.Resize({"height": im_h, "width": im_w}),
           ])
