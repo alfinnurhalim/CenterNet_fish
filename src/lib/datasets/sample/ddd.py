@@ -63,9 +63,9 @@ class DddDataset(data.Dataset):
 
     aug = iaa.Sequential([
               iaa.AddToHueAndSaturation((-40, 30), per_channel=True),
-              # iaa.Rot90((1, 3)),
-              # iaa.Fliplr(0.5),
-              # iaa.Flipud(0.5),
+              iaa.Rot90((1, 3)),
+              iaa.Fliplr(0.5),
+              iaa.Flipud(0.5),
               iaa.AverageBlur(k=(1, 20)),
           ])
 
@@ -138,15 +138,13 @@ class DddDataset(data.Dataset):
                     draw_umich_gaussian
     
     gt_det = []
-    bboxs = []
+
     for k in range(num_objs):
       ann = anns[k]
-      bbox = self._coco_box_to_bbox(ann['bbox'])
-      # bbox_converted = self._bbs_box_to_bbox(bbs_aug[k])
-      # bbox = bbox_converted
+      # bbox = self._coco_box_to_bbox(ann['bbox'])
+      bbox_converted = self._bbs_box_to_bbox(bbs_aug[k])
+      bbox = bbox_converted
 
-      cx = ann['cx']
-      cy = ann['cy']
       cls_id = int(self.cat_ids[ann['category_id']])
       if cls_id <= -99:
         continue
@@ -157,14 +155,12 @@ class DddDataset(data.Dataset):
       bbox[[0, 2]] = np.clip(bbox[[0, 2]], 0, self.opt.output_w - 1)
       bbox[[1, 3]] = np.clip(bbox[[1, 3]], 0, self.opt.output_h - 1)
 
-      h, w = abs(bbox[3] - bbox[1]), abs(bbox[2] - bbox[0])
+      h, w = bbox[3] - bbox[1], bbox[2] - bbox[0]
       if h > 0 and w > 0:
         radius = gaussian_radius((h, w))
         radius = max(0, int(radius))
-        # ct = np.array(
-        #   [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
         ct = np.array(
-          [cx,cy], dtype=np.float32)
+          [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
         ct_int = ct.astype(np.int32)
         if cls_id < 0:
           ignore_id = [_ for _ in range(num_classes)] \
@@ -180,10 +176,10 @@ class DddDataset(data.Dataset):
         draw_gaussian(hm[cls_id], ct, radius)
 
         wh[k] = 1. * w, 1. * h
-        bboxs.append([k, ct[0], ct[1], bbox])
-        gt_det.append([ct[0], ct[1], 1] + \
-                      self._alpha_to_8(self._convert_alpha(ann['alphax'])) + \
-                      [ann['depth']] + (np.array(ann['dim']) / 1).tolist() + [cls_id])
+        gt_det.append([k, ct[0], ct[1], bbox, bbox_converted])
+        # gt_det.append([ct[0], ct[1], 1] + \
+        #               self._alpha_to_8(self._convert_alpha(ann['alphax'])) + \
+        #               [ann['depth']] + (np.array(ann['dim']) / 1).tolist() + [cls_id])
         # if self.opt.reg_bbox:
         #   gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
         # if (not self.opt.car_only) or cls_id == 1: # Only estimate ADD for cars !!!
@@ -226,7 +222,7 @@ class DddDataset(data.Dataset):
       gt_det = np.array(gt_det, dtype=np.float32) if len(gt_det) > 0 else \
                np.zeros((1, 18), dtype=np.float32)
       meta = {'c': c, 's': s, 'gt_det': gt_det, 'calib': calib,
-              'image_path': img_path, 'img_id': img_id, 'bboxs': bboxs}
+              'image_path': img_path, 'img_id': img_id}
       ret['meta'] = meta
     
     return ret
