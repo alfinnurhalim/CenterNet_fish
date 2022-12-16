@@ -67,8 +67,8 @@ class DddDataset(data.Dataset):
               # iaa.Fliplr(0.5),
               # iaa.Flipud(0.5),
               iaa.AverageBlur(k=(1, 20)),
-              iaa.Resize({"height": new_h, "width": new_w}),
-              iaa.Resize({"height": im_h, "width": im_w}),
+              # iaa.Resize({"height": new_h, "width": new_w}),
+              # iaa.Resize({"height": im_h, "width": im_w}),
           ])
 
     bbox_list = list()
