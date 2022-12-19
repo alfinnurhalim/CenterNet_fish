@@ -36,23 +36,108 @@ class DddDataset(data.Dataset):
   def _convert_alpha(self, alpha):
     return math.radians(alpha) if self.alpha_in_degree else alpha
 
-  def __getitem__(self, index):
-    img_id = self.images[index]
-    img_info = self.coco.loadImgs(ids=[img_id])[0]
-    img_path = os.path.join(self.img_dir, img_info['file_name'])
-    img = cv2.imread(img_path)
-
-    ann_ids = self.coco.getAnnIds(imgIds=[img_id])
-    anns = self.coco.loadAnns(ids=ann_ids)
-    num_objs = min(len(anns), self.max_objs)
+  def _aug_mosaic(self,output_size,scale_range,index):
+    random.seed(index)
+    # get random img index
+    idxs = random.sample(range(len(self.images)), 4)
+    # rand = random.randint(0,len(self.images))
+    # idxs = [rand,rand,rand,rand]
+    new_annos = []
     
-    lower_bound = 1
-    upper_bound = 5
-    ratio = random.uniform(lower_bound, upper_bound)
+    # img output placeholder
+    output_img = np.zeros([output_size[0], output_size[1], 3], dtype=np.uint8)
+    
+    # get scale
+    scale_x = scale_range[0] + random.random() * (scale_range[1] - scale_range[0])
+    scale_y = scale_range[0] + random.random() * (scale_range[1] - scale_range[0])
 
-    im_h,im_w,_ = img.shape
-    new_h = int(im_h/ratio)
-    new_w = int(im_w/ratio)
+    divid_point_x = int(scale_x * output_size[1])
+    divid_point_y = int(scale_y * output_size[0])
+
+    # random resizing
+    divid_point_x,divid_point_y,scale_x,scale_y
+    
+    for i, idx in enumerate(idxs):
+      img_id = self.images[idx]
+      img_info = self.coco.loadImgs(ids=[img_id])[0]
+      img_path = os.path.join(self.img_dir, img_info['file_name'])
+      img = cv2.imread(img_path)
+
+      ann_ids = self.coco.getAnnIds(imgIds=[img_id])
+      img_annos = self.coco.loadAnns(ids=ann_ids)
+
+      if i == 0:  # top-left
+        img = cv2.resize(img, (divid_point_x, divid_point_y))
+        output_img[:divid_point_y, :divid_point_x, :] = img
+        for ann in img_annos:
+          bbox = self._coco_box_to_bbox(ann['bbox'])
+          xmin = bbox[0] * scale_x
+          ymin = bbox[1] * scale_y
+          xmax = bbox[2] * scale_x
+          ymax = bbox[3] * scale_y
+          new_annos.append([xmin, ymin, xmax, ymax])
+
+      elif i == 1:  # top-right
+        img = cv2.resize(img, (output_size[1] - divid_point_x, divid_point_y))
+        output_img[:divid_point_y, divid_point_x:output_size[1], :] = img
+        for ann in img_annos:
+          bbox = self._coco_box_to_bbox(ann['bbox'])
+          xmin = divid_point_x + bbox[0] * (1 - scale_x)
+          ymin = bbox[1] * scale_y
+          xmax = divid_point_x + bbox[2] * (1 - scale_x)
+          ymax = bbox[3] * scale_y
+          new_annos.append([xmin, ymin, xmax, ymax])
+
+      elif i == 2:  # bottom-left
+        img = cv2.resize(img, (divid_point_x, output_size[0] - divid_point_y))
+        output_img[divid_point_y:output_size[0], :divid_point_x, :] = img
+        for ann in img_annos:
+          bbox = self._coco_box_to_bbox(ann['bbox'])
+          xmin = bbox[0] * scale_x
+          ymin = divid_point_y + bbox[1] * (1 - scale_y)
+          xmax = bbox[2] * scale_x
+          ymax = divid_point_y + bbox[3] * (1 - scale_y)
+          new_annos.append([xmin, ymin, xmax, ymax])
+
+      else:  # bottom-right
+        img = cv2.resize(img, (output_size[1] - divid_point_x, output_size[0] - divid_point_y))
+        output_img[divid_point_y:output_size[0], divid_point_x:output_size[1], :] = img
+        for ann in img_annos:
+          bbox = self._coco_box_to_bbox(ann['bbox'])
+          xmin = divid_point_x + bbox[0] * (1 - scale_x)
+          ymin = divid_point_y + bbox[1] * (1 - scale_y)
+          xmax = divid_point_x + bbox[2] * (1 - scale_x)
+          ymax = divid_point_y + bbox[3] * (1 - scale_y)
+          new_annos.append([xmin, ymin, xmax, ymax])
+              
+    return output_img,new_annos
+
+  def __getitem__(self, index):
+    scale_range = (0.3, 0.7)
+    output_size = (512,512)
+
+    # only for 2d
+    img,annos = self._aug_mosaic(output_size,scale_range,index)
+
+    # img_id = self.images[index]
+    # img_info = self.coco.loadImgs(ids=[img_id])[0]
+    # img_path = os.path.join(self.img_dir, img_info['file_name'])
+    # img = cv2.imread(img_path)
+
+    # ann_ids = self.coco.getAnnIds(imgIds=[img_id])
+    # img_annos = self.coco.loadAnns(ids=ann_ids)
+    # annos = [self._coco_box_to_bbox(ann['bbox']) for ann in img_annos]
+
+    num_objs = min(len(annos), self.max_objs)
+
+    # lower_bound = 1
+    # upper_bound = 5
+    # ratio = random.uniform(lower_bound, upper_bound)
+
+    
+    # im_h,im_w,_ = img.shape
+    # new_h = int(im_h/ratio)
+    # new_w = int(im_w/ratio)
 
     # aug = iaa.Sequential([
     #         iaa.Multiply((0.5, 1.1)),
@@ -66,32 +151,30 @@ class DddDataset(data.Dataset):
               # iaa.Rot90((1, 3)),
               # iaa.Fliplr(0.5),
               # iaa.Flipud(0.5),
-              iaa.AverageBlur(k=(1, 20)),
+              # iaa.AverageBlur(k=(1, 20)),
               # iaa.Resize({"height": new_h, "width": new_w}),
               # iaa.Resize({"height": im_h, "width": im_w}),
           ])
 
-    bbox_list = list()
+    # bbox_list = list()
 
-    for k in range(num_objs):
-      ann = anns[k]
-      bbox = self._coco_box_to_bbox(ann['bbox'])
+    # for bbox in annos:
+    #   x1 = bbox[0]
+    #   y1 = bbox[1]
+    #   x2 = bbox[2]
+    #   y2 = bbox[3]
 
-      x1 = bbox[0]
-      y1 = bbox[1]
-      x2 = bbox[2]
-      y2 = bbox[3]
+    #   bbox = BoundingBox(x1=x1,y1=y1,x2=x2,y2=y2)
+    #   bbox_list.append(bbox)
 
-      bbox = BoundingBox(x1=x1,y1=y1,x2=x2,y2=y2)
-      bbox_list.append(bbox)
+    # bbs = BoundingBoxesOnImage(bbox_list,shape=img.shape)
+    # img, bbs_aug = aug(image=img, bounding_boxes=bbs)
 
-    bbs = BoundingBoxesOnImage(bbox_list,shape=img.shape)
-    img, bbs_aug = aug(image=img, bounding_boxes=bbs)
-
-    if 'calib' in img_info:
-      calib = np.array(img_info['calib'], dtype=np.float32)
-    else:
-      calib = self.calib
+    # need to uncomment this for 3d
+    # if 'calib' in img_info:
+    #   calib = np.array(img_info['calib'], dtype=np.float32)
+    # else:
+    #   calib = self.calib
 
     height, width = img.shape[0], img.shape[1]
     c = np.array([img.shape[1] / 2., img.shape[0] / 2.])
@@ -142,16 +225,18 @@ class DddDataset(data.Dataset):
     gt_det = []
 
     for k in range(num_objs):
-      ann = anns[k]
+      # ann = anns[k]
       # bbox = self._coco_box_to_bbox(ann['bbox'])
-      bbox_converted = self._bbs_box_to_bbox(bbs_aug[k])
-      bbox = bbox_converted
+      # bbox_converted = self._bbs_box_to_bbox(bbs_aug[k])
+      bbox = np.array(annos[k])
 
-      cls_id = int(self.cat_ids[ann['category_id']])
+      # cls_id = int(self.cat_ids[ann['category_id']])
+      cls_id = int(self.cat_ids[1])
       if cls_id <= -99:
         continue
       # if flipped:
       #   bbox[[0, 2]] = width - bbox[[2, 0]] - 1
+
       bbox[:2] = affine_transform(bbox[:2], trans_output)
       bbox[2:] = affine_transform(bbox[2:], trans_output)
       bbox[[0, 2]] = np.clip(bbox[[0, 2]], 0, self.opt.output_w - 1)
@@ -178,33 +263,34 @@ class DddDataset(data.Dataset):
         draw_gaussian(hm[cls_id], ct, radius)
 
         wh[k] = 1. * w, 1. * h
-        gt_det.append([k, ct[0], ct[1], bbox, bbox_converted])
+        # gt_det.append([k, ct[0], ct[1], bbox, bbox_converted])
         # gt_det.append([ct[0], ct[1], 1] + \
         #               self._alpha_to_8(self._convert_alpha(ann['alphax'])) + \
         #               [ann['depth']] + (np.array(ann['dim']) / 1).tolist() + [cls_id])
+        gt_det.append([ct_int[1], ct_int[0]])
         # if self.opt.reg_bbox:
         #   gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
         # if (not self.opt.car_only) or cls_id == 1: # Only estimate ADD for cars !!!
 
-        alphaX = ann['alphax'] % (2*np.pi)
-        alphaY = ann['alphay'] % (2*np.pi)
+        # alphaX = ann['alphax'] % (2*np.pi)
+        # alphaY = ann['alphay'] % (2*np.pi)
 
-        # BINNING
-        bot_thr = np.radians(30)
-        up_thr = np.radians(150)
+        # # BINNING
+        # bot_thr = np.radians(30)
+        # up_thr = np.radians(150)
 
-        if alphaX < bot_thr or alphaX > up_thr:
-            bin_class = 0
-            rotbin[k, bin_class] = 1
-            rotres[k, bin_class] = alphaX 
+        # if alphaX < bot_thr or alphaX > up_thr:
+        #     bin_class = 0
+        #     rotbin[k, bin_class] = 1
+        #     rotres[k, bin_class] = alphaX 
 
-        if alphaX < -bot_thr or alphaX > -up_thr:
-            bin_class = 1
-            rotbin[k, bin_class] = 1
-            rotres[k, bin_class] = alphaX 
+        # if alphaX < -bot_thr or alphaX > -up_thr:
+        #     bin_class = 1
+        #     rotbin[k, bin_class] = 1
+        #     rotres[k, bin_class] = alphaX 
 
-        dep[k] = ann['depth']
-        dim[k] = ann['dim']
+        # dep[k] = ann['depth']
+        # dim[k] = ann['dim']
 
         # print('        cat dim', cls_id, dim[k])
         ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
@@ -213,7 +299,10 @@ class DddDataset(data.Dataset):
         rot_mask[k] = 1
     # print('gt_det', gt_det)
     # print('')
-    ret = {'input': inp, 'hm': hm, 'dep': dep, 'dim': dim, 'ind': ind, 
+    # ret = {'input': inp, 'hm': hm, 'dep': dep, 'dim': dim, 'ind': ind, 
+    #        'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
+    #        'rot_mask': rot_mask}
+    ret = {'input': inp, 'hm': hm, 'dep': 0, 'dim': [0,0,0], 'ind': ind, 
            'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
            'rot_mask': rot_mask}
     if self.opt.reg_bbox:
@@ -223,8 +312,8 @@ class DddDataset(data.Dataset):
     if self.opt.debug > 0 or not ('train' in self.split):
       gt_det = np.array(gt_det, dtype=np.float32) if len(gt_det) > 0 else \
                np.zeros((1, 18), dtype=np.float32)
-      meta = {'c': c, 's': s, 'gt_det': gt_det, 'calib': calib,
-              'image_path': img_path, 'img_id': img_id}
+      meta = {'c': c, 's': s, 'gt_det': gt_det, 'calib': 0,
+              'image_path': 0, 'img_id': 0,'annos':annos}
       ret['meta'] = meta
     
     return ret
