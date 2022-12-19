@@ -292,6 +292,9 @@ class DddDataset(data.Dataset):
         # dep[k] = ann['depth']
         # dim[k] = ann['dim']
 
+        dep[k] = 0
+        dim[k] = [0,0,0]
+
         # print('        cat dim', cls_id, dim[k])
         ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
         reg[k] = ct - ct_int
@@ -299,12 +302,12 @@ class DddDataset(data.Dataset):
         rot_mask[k] = 1
     # print('gt_det', gt_det)
     # print('')
-    # ret = {'input': inp, 'hm': hm, 'dep': dep, 'dim': dim, 'ind': ind, 
-    #        'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
-    #        'rot_mask': rot_mask}
-    ret = {'input': inp, 'hm': hm, 'dep': 0, 'dim': [0,0,0], 'ind': ind, 
+    ret = {'input': inp, 'hm': hm, 'dep': dep, 'dim': dim, 'ind': ind, 
            'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
            'rot_mask': rot_mask}
+    # ret = {'input': inp, 'hm': hm, 'dep': 0, 'dim': np.array([0,0,0]), 'ind': ind, 
+    #        'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
+    #        'rot_mask': rot_mask}
     if self.opt.reg_bbox:
       ret.update({'wh': wh})
     if self.opt.reg_offset:
