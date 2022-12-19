@@ -39,6 +39,7 @@ class DddDataset(data.Dataset):
   def _aug_mosaic(self,output_size,scale_range,index):
     random.seed(index)
     # get random img index
+    prob = random.uniform(0.0, 1.0)
     idxs = random.sample(range(len(self.images)), 4)
     # rand = random.randint(0,len(self.images))
     # idxs = [rand,rand,rand,rand]
@@ -48,8 +49,8 @@ class DddDataset(data.Dataset):
     output_img = np.zeros([output_size[0], output_size[1], 3], dtype=np.uint8)
     
     # get scale
-    scale_x = scale_range[0] + random.random() * (scale_range[1] - scale_range[0])
-    scale_y = scale_range[0] + random.random() * (scale_range[1] - scale_range[0])
+    scale_x = scale_range[0] + random.random() * (scale_range[1] - scale_range[0]) if prob > 0.5 else 1
+    scale_y = scale_range[0] + random.random() * (scale_range[1] - scale_range[0]) if prob > 0.5 else 1
 
     divid_point_x = int(scale_x * output_size[1])
     divid_point_y = int(scale_y * output_size[0])
@@ -77,7 +78,7 @@ class DddDataset(data.Dataset):
           ymax = bbox[3] * scale_y
           new_annos.append([xmin, ymin, xmax, ymax])
 
-      elif i == 1:  # top-right
+      elif (i == 1 and prob > 0.5):  # top-right
         img = cv2.resize(img, (output_size[1] - divid_point_x, divid_point_y))
         output_img[:divid_point_y, divid_point_x:output_size[1], :] = img
         for ann in img_annos:
@@ -88,7 +89,7 @@ class DddDataset(data.Dataset):
           ymax = bbox[3] * scale_y
           new_annos.append([xmin, ymin, xmax, ymax])
 
-      elif i == 2:  # bottom-left
+      elif (i == 2 and prob > 0.5):  # bottom-left
         img = cv2.resize(img, (divid_point_x, output_size[0] - divid_point_y))
         output_img[divid_point_y:output_size[0], :divid_point_x, :] = img
         for ann in img_annos:
@@ -99,7 +100,7 @@ class DddDataset(data.Dataset):
           ymax = divid_point_y + bbox[3] * (1 - scale_y)
           new_annos.append([xmin, ymin, xmax, ymax])
 
-      else:  # bottom-right
+      elif (i == 3 and prob > 0.5):  # bottom-right
         img = cv2.resize(img, (output_size[1] - divid_point_x, output_size[0] - divid_point_y))
         output_img[divid_point_y:output_size[0], divid_point_x:output_size[1], :] = img
         for ann in img_annos:
@@ -113,20 +114,23 @@ class DddDataset(data.Dataset):
     return output_img,new_annos
 
   def __getitem__(self, index):
-    scale_range = (0.3, 0.7)
+    scale_range = (0.4, 0.6)
     output_size = (512,512)
 
     # only for 2d
+    
+    # aug_prob = 1
+    # if aug_prob > 0.5:
     img,annos = self._aug_mosaic(output_size,scale_range,index)
+    # else:
+    #   img_id = self.images[index]
+    #   img_info = self.coco.loadImgs(ids=[img_id])[0]
+    #   img_path = os.path.join(self.img_dir, img_info['file_name'])
+    #   img = cv2.imread(img_path)
 
-    # img_id = self.images[index]
-    # img_info = self.coco.loadImgs(ids=[img_id])[0]
-    # img_path = os.path.join(self.img_dir, img_info['file_name'])
-    # img = cv2.imread(img_path)
-
-    # ann_ids = self.coco.getAnnIds(imgIds=[img_id])
-    # img_annos = self.coco.loadAnns(ids=ann_ids)
-    # annos = [self._coco_box_to_bbox(ann['bbox']) for ann in img_annos]
+    #   ann_ids = self.coco.getAnnIds(imgIds=[img_id])
+    #   img_annos = self.coco.loadAnns(ids=ann_ids)
+    #   annos = [self._coco_box_to_bbox(ann['bbox']) for ann in img_annos]
 
     num_objs = min(len(annos), self.max_objs)
 
