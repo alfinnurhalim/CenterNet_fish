@@ -121,16 +121,16 @@ class DddDataset(data.Dataset):
     
     # aug_prob = 1
     # if aug_prob > 0.5:
-    img,annos = self._aug_mosaic(output_size,scale_range,index)
+    # img,annos = self._aug_mosaic(output_size,scale_range,index)
     # else:
-    #   img_id = self.images[index]
-    #   img_info = self.coco.loadImgs(ids=[img_id])[0]
-    #   img_path = os.path.join(self.img_dir, img_info['file_name'])
-    #   img = cv2.imread(img_path)
+    img_id = self.images[index]
+    img_info = self.coco.loadImgs(ids=[img_id])[0]
+    img_path = os.path.join(self.img_dir, img_info['file_name'])
+    img = cv2.imread(img_path)
 
-    #   ann_ids = self.coco.getAnnIds(imgIds=[img_id])
-    #   img_annos = self.coco.loadAnns(ids=ann_ids)
-    #   annos = [self._coco_box_to_bbox(ann['bbox']) for ann in img_annos]
+    ann_ids = self.coco.getAnnIds(imgIds=[img_id])
+    img_annos = self.coco.loadAnns(ids=ann_ids)
+    annos = [self._coco_box_to_bbox(ann['bbox']) for ann in img_annos]
 
     num_objs = min(len(annos), self.max_objs)
 
