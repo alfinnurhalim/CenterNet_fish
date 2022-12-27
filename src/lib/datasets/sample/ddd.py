@@ -160,7 +160,7 @@ class DddDataset(data.Dataset):
               # iaa.Resize({"height": im_h, "width": im_w}),
           ])
 
-    img = aug(images=img)
+    img = aug(image=img)
     # bbox_list = list()
 
     # for bbox in annos:
