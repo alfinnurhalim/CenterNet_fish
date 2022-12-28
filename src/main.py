@@ -44,7 +44,7 @@ def main(opt):
     'wh' : model.wh,
     'reg' : model.reg,
   }
-  frozen_layer = ['base','dla_up','ida_up','hm','reg','dep','rot','dim']
+  frozen_layer = ['base','dla_up','ida_up','hm','reg','wh']
   for key in frozen_layer:
     for name,param in model_layers[key].named_parameters():
         param.requires_grad = False
@@ -92,7 +92,7 @@ def main(opt):
     mark = epoch if opt.save_all else 'last'
     log_dict_train, _ = trainer.train(epoch, train_loader)
     logger.write('epoch: {} |'.format(epoch))
-    # wandb.log(log_dict_train)
+    wandb.log(log_dict_train)
 
     for k, v in log_dict_train.items():
       logger.scalar_summary('train_{}'.format(k), v, epoch)
@@ -123,6 +123,6 @@ def main(opt):
   logger.close()
 
 if __name__ == '__main__':
-  # wandb.init(project="CenterNet_fish",entity='alfin-nurhalim')
+  wandb.init(project="CenterNet_fish",entity='alfin-nurhalim')
   opt = opts().parse()
   main(opt)
