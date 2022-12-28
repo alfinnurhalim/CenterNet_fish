@@ -17,18 +17,6 @@ from trains.train_factory import train_factory
 
 import wandb
 
-model_layers = {
-    'base' : model.base,
-    'dla_up' : model.dla_up,
-    'ida_up' : model.ida_up,
-    'hm' : model.hm,
-    'dep' : model.dep,
-    'rot' : model.rot,
-    'dim' : model.dim,
-    'wh' : model.wh,
-    'reg' : model.reg,
-}
-
 def main(opt):
   torch.manual_seed(opt.seed)
   torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
@@ -45,7 +33,18 @@ def main(opt):
   model = create_model(opt.arch, opt.heads, opt.head_conv)
 
   print('Freezing layer')
-  frozen_layer = ['base','dla_up','ida_up','hm','reg']
+  model_layers = {
+    'base' : model.base,
+    'dla_up' : model.dla_up,
+    'ida_up' : model.ida_up,
+    'hm' : model.hm,
+    'dep' : model.dep,
+    'rot' : model.rot,
+    'dim' : model.dim,
+    'wh' : model.wh,
+    'reg' : model.reg,
+  }
+  frozen_layer = ['base','dla_up','ida_up','hm','reg','dep','rot','dim']
   for key in frozen_layer:
     for name,param in model_layers[key].named_parameters():
         param.requires_grad = False
