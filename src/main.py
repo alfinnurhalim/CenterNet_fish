@@ -17,6 +17,18 @@ from trains.train_factory import train_factory
 
 import wandb
 
+model_layers = {
+    'base' : model.base,
+    'dla_up' : model.dla_up,
+    'ida_up' : model.ida_up,
+    'hm' : model.hm,
+    'dep' : model.dep,
+    'rot' : model.rot,
+    'dim' : model.dim,
+    'wh' : model.wh,
+    'reg' : model.reg,
+}
+
 def main(opt):
   torch.manual_seed(opt.seed)
   torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
@@ -31,6 +43,17 @@ def main(opt):
   
   print('Creating model...')
   model = create_model(opt.arch, opt.heads, opt.head_conv)
+
+  print('Freezing layer')
+  frozen_layer = ['base','dla_up','ida_up','hm','reg']
+  for key in frozen_layer:
+    for name,param in model_layers[key].named_parameters():
+        param.requires_grad = False
+
+  for name,param in model.named_parameters():
+    print(name,param.requires_grad)
+  
+  print('Init optimizer')
   optimizer = torch.optim.Adam(model.parameters(), opt.lr)
   start_epoch = 0
   if opt.load_model != '':
@@ -70,7 +93,7 @@ def main(opt):
     mark = epoch if opt.save_all else 'last'
     log_dict_train, _ = trainer.train(epoch, train_loader)
     logger.write('epoch: {} |'.format(epoch))
-    wandb.log(log_dict_train)
+    # wandb.log(log_dict_train)
 
     for k, v in log_dict_train.items():
       logger.scalar_summary('train_{}'.format(k), v, epoch)
@@ -101,6 +124,6 @@ def main(opt):
   logger.close()
 
 if __name__ == '__main__':
-  wandb.init(project="CenterNet_fish",entity='alfin-nurhalim')
+  # wandb.init(project="CenterNet_fish",entity='alfin-nurhalim')
   opt = opts().parse()
   main(opt)
