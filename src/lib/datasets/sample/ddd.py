@@ -230,7 +230,7 @@ class DddDataset(data.Dataset):
     gt_det = []
 
     for k in range(num_objs):
-      # ann = anns[k]
+      ann = anns[k]
       # bbox = self._coco_box_to_bbox(ann['bbox'])
       # bbox_converted = self._bbs_box_to_bbox(bbs_aug[k])
       bbox = np.array(annos[k])
