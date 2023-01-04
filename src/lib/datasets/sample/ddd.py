@@ -277,28 +277,28 @@ class DddDataset(data.Dataset):
         #   gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
         # if (not self.opt.car_only) or cls_id == 1: # Only estimate ADD for cars !!!
 
-        # alphaX = ann['alphax'] % (2*np.pi)
-        # alphaY = ann['alphay'] % (2*np.pi)
+        alphaX = ann['alphax'] % (2*np.pi)
+        alphaY = ann['alphay'] % (2*np.pi)
 
-        # # BINNING
-        # bot_thr = np.radians(30)
-        # up_thr = np.radians(150)
+        # BINNING
+        bot_thr = np.radians(30)
+        up_thr = np.radians(150)
 
-        # if alphaX < bot_thr or alphaX > up_thr:
-        #     bin_class = 0
-        #     rotbin[k, bin_class] = 1
-        #     rotres[k, bin_class] = alphaX 
+        if alphaX < bot_thr or alphaX > up_thr:
+            bin_class = 0
+            rotbin[k, bin_class] = 1
+            rotres[k, bin_class] = alphaX 
 
-        # if alphaX < -bot_thr or alphaX > -up_thr:
-        #     bin_class = 1
-        #     rotbin[k, bin_class] = 1
-        #     rotres[k, bin_class] = alphaX 
+        if alphaX < -bot_thr or alphaX > -up_thr:
+            bin_class = 1
+            rotbin[k, bin_class] = 1
+            rotres[k, bin_class] = alphaX 
 
-        # dep[k] = ann['depth']
-        # dim[k] = ann['dim']
+        dep[k] = ann['depth']
+        dim[k] = ann['dim']
 
-        dep[k] = 0
-        dim[k] = [0,0,0]
+        # dep[k] = 0
+        # dim[k] = [0,0,0]
 
         # print('        cat dim', cls_id, dim[k])
         ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
