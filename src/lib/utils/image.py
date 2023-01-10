@@ -15,6 +15,13 @@ import random
 
 num_heading_bin = 12  # hyper param
 
+def get_heading_angle(heading):
+    heading = heading.reshape([24,])
+    heading_bin, heading_res = heading[0:12], heading[12:24]
+    cls = np.argmax(heading_bin)
+    res = heading_res[cls]
+    return class2angle(cls, res, to_label_format=True)
+
 def angle2class(angle):
     ''' Convert continuous angle to discrete class and residual. '''
     angle = angle % (2 * np.pi)
