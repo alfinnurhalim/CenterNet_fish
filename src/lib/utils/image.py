@@ -13,7 +13,7 @@ import numpy as np
 import cv2
 import random
 
-num_heading_bin = 12  # hyper param
+num_heading_bin = 4  # hyper param
 
 def get_heading_angle(heading):
     heading = heading.reshape([24,])
