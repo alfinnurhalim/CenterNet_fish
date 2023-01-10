@@ -13,6 +13,28 @@ import numpy as np
 import cv2
 import random
 
+num_heading_bin = 12  # hyper param
+
+def angle2class(angle):
+    ''' Convert continuous angle to discrete class and residual. '''
+    angle = angle % (2 * np.pi)
+    assert (angle >= 0 and angle <= 2 * np.pi)
+    angle_per_class = 2 * np.pi / float(num_heading_bin)
+    shifted_angle = (angle + angle_per_class / 2) % (2 * np.pi)
+    class_id = int(shifted_angle / angle_per_class)
+    residual_angle = shifted_angle - (class_id * angle_per_class + angle_per_class / 2)
+    return class_id, residual_angle
+
+
+def class2angle(cls, residual, to_label_format=False):
+    ''' Inverse function to angle2class. '''
+    angle_per_class = 2 * np.pi / float(num_heading_bin)
+    angle_center = cls * angle_per_class
+    angle = angle_center + residual
+    if to_label_format and angle > np.pi:
+        angle = angle - 2 * np.pi
+    return angle
+
 def flip(img):
   return img[:, :, ::-1].copy()  
 

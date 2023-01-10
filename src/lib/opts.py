@@ -306,7 +306,7 @@ class opts(object):
         opt.heads.update({'reg_t': 2, 'reg_l': 2, 'reg_b': 2, 'reg_r': 2})
     elif opt.task == 'ddd':
       # assert opt.dataset in ['gta', 'kitti', 'viper']
-      opt.heads = {'hm': opt.num_classes, 'dep': 1, 'rot': 8, 'dim': 3}
+      opt.heads = {'hm': opt.num_classes, 'dep': 1, 'rot': 8, 'dim': 3, 'headingX':24, 'headingY':24}
       if opt.reg_bbox:
         opt.heads.update(
           {'wh': 2})

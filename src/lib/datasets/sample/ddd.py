@@ -11,7 +11,7 @@ import cv2
 import os
 import math
 import random
-from utils.image import flip, color_aug
+from utils.image import flip, color_aug,angle2class,class2angle
 from utils.image import get_affine_transform, affine_transform
 from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
 import pycocotools.coco as coco
@@ -35,83 +35,6 @@ class DddDataset(data.Dataset):
 
   def _convert_alpha(self, alpha):
     return math.radians(alpha) if self.alpha_in_degree else alpha
-
-  def _aug_mosaic(self,output_size,scale_range,index):
-    random.seed(index)
-    # get random img index
-    prob = random.uniform(0.0, 1.0)
-    idxs = random.sample(range(len(self.images)), 4)
-    # rand = random.randint(0,len(self.images))
-    # idxs = [rand,rand,rand,rand]
-    new_annos = []
-    
-    # img output placeholder
-    output_img = np.zeros([output_size[0], output_size[1], 3], dtype=np.uint8)
-    
-    # get scale
-    scale_x = scale_range[0] + random.random() * (scale_range[1] - scale_range[0]) if prob > 0.5 else 1
-    scale_y = scale_range[0] + random.random() * (scale_range[1] - scale_range[0]) if prob > 0.5 else 1
-
-    divid_point_x = int(scale_x * output_size[1])
-    divid_point_y = int(scale_y * output_size[0])
-
-    # random resizing
-    divid_point_x,divid_point_y,scale_x,scale_y
-    
-    for i, idx in enumerate(idxs):
-      img_id = self.images[idx]
-      img_info = self.coco.loadImgs(ids=[img_id])[0]
-      img_path = os.path.join(self.img_dir, img_info['file_name'])
-      img = cv2.imread(img_path)
-
-      ann_ids = self.coco.getAnnIds(imgIds=[img_id])
-      img_annos = self.coco.loadAnns(ids=ann_ids)
-
-      if i == 0:  # top-left
-        img = cv2.resize(img, (divid_point_x, divid_point_y))
-        output_img[:divid_point_y, :divid_point_x, :] = img
-        for ann in img_annos:
-          bbox = self._coco_box_to_bbox(ann['bbox'])
-          xmin = bbox[0] * scale_x
-          ymin = bbox[1] * scale_y
-          xmax = bbox[2] * scale_x
-          ymax = bbox[3] * scale_y
-          new_annos.append([xmin, ymin, xmax, ymax])
-
-      elif (i == 1 and prob > 0.5):  # top-right
-        img = cv2.resize(img, (output_size[1] - divid_point_x, divid_point_y))
-        output_img[:divid_point_y, divid_point_x:output_size[1], :] = img
-        for ann in img_annos:
-          bbox = self._coco_box_to_bbox(ann['bbox'])
-          xmin = divid_point_x + bbox[0] * (1 - scale_x)
-          ymin = bbox[1] * scale_y
-          xmax = divid_point_x + bbox[2] * (1 - scale_x)
-          ymax = bbox[3] * scale_y
-          new_annos.append([xmin, ymin, xmax, ymax])
-
-      elif (i == 2 and prob > 0.5):  # bottom-left
-        img = cv2.resize(img, (divid_point_x, output_size[0] - divid_point_y))
-        output_img[divid_point_y:output_size[0], :divid_point_x, :] = img
-        for ann in img_annos:
-          bbox = self._coco_box_to_bbox(ann['bbox'])
-          xmin = bbox[0] * scale_x
-          ymin = divid_point_y + bbox[1] * (1 - scale_y)
-          xmax = bbox[2] * scale_x
-          ymax = divid_point_y + bbox[3] * (1 - scale_y)
-          new_annos.append([xmin, ymin, xmax, ymax])
-
-      elif (i == 3 and prob > 0.5):  # bottom-right
-        img = cv2.resize(img, (output_size[1] - divid_point_x, output_size[0] - divid_point_y))
-        output_img[divid_point_y:output_size[0], divid_point_x:output_size[1], :] = img
-        for ann in img_annos:
-          bbox = self._coco_box_to_bbox(ann['bbox'])
-          xmin = divid_point_x + bbox[0] * (1 - scale_x)
-          ymin = divid_point_y + bbox[1] * (1 - scale_y)
-          xmax = divid_point_x + bbox[2] * (1 - scale_x)
-          ymax = divid_point_y + bbox[3] * (1 - scale_y)
-          new_annos.append([xmin, ymin, xmax, ymax])
-              
-    return output_img,new_annos
 
   def __getitem__(self, index):
     scale_range = (0.4, 0.6)
@@ -212,17 +135,30 @@ class DddDataset(data.Dataset):
     trans_output = get_affine_transform(
       c, s, 0, [self.opt.output_w, self.opt.output_h])
 
+    # ===========shape============
     hm = np.zeros(
       (num_classes, self.opt.output_h, self.opt.output_w), dtype=np.float32)
-    wh = np.zeros((self.max_objs, 2), dtype=np.float32)
     reg = np.zeros((self.max_objs, 2), dtype=np.float32)
+
+    wh = np.zeros((self.max_objs, 2), dtype=np.float32)
+
     dep = np.zeros((self.max_objs, 1), dtype=np.float32)
+
     rotbin = np.zeros((self.max_objs, 2), dtype=np.int64)
     rotres = np.zeros((self.max_objs, 2), dtype=np.float32)
+    
+    heading_binX = np.zeros((self.max_objs, 1), dtype=np.int64)
+    heading_resX = np.zeros((self.max_objs, 1), dtype=np.float32)
+    heading_binY = np.zeros((self.max_objs, 1), dtype=np.int64)
+    heading_resY = np.zeros((self.max_objs, 1), dtype=np.float32)
+
     dim = np.zeros((self.max_objs, 3), dtype=np.float32)
+
     ind = np.zeros((self.max_objs), dtype=np.int64)
     reg_mask = np.zeros((self.max_objs), dtype=np.uint8)
     rot_mask = np.zeros((self.max_objs), dtype=np.uint8)
+
+    # ===========shape============
 
     draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else \
                     draw_umich_gaussian
@@ -280,6 +216,9 @@ class DddDataset(data.Dataset):
         alphaX = ann['alphax'] % (2*np.pi)
         alphaY = ann['alphay'] % (2*np.pi)
 
+        heading_binX[k], heading_resX[k] = angle2class(alphaX)
+        heading_binY[k], heading_resY[k] = angle2class(alphaY)
+
         # BINNING
         bot_thr = np.radians(30)
         up_thr = np.radians(150)
@@ -307,9 +246,20 @@ class DddDataset(data.Dataset):
         rot_mask[k] = 1
     # print('gt_det', gt_det)
     # print('')
-    ret = {'input': inp, 'hm': hm, 'dep': dep, 'dim': dim, 'ind': ind, 
-           'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
-           'rot_mask': rot_mask}
+    ret = {'input': inp, 
+            'hm': hm, 
+            'dep': dep, 
+            'dim': dim, 
+            'ind': ind, 
+            'rotbin': rotbin, 
+            'rotres': rotres,
+            'heading_binX': heading_binX, 
+            'heading_resX': heading_resX,
+            'heading_binY': heading_binY, 
+            'heading_resY': heading_resY,
+            'reg_mask': reg_mask,
+            'rot_mask': rot_mask}
+
     # ret = {'input': inp, 'hm': hm, 'dep': 0, 'dim': np.array([0,0,0]), 'ind': ind, 
     #        'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
     #        'rot_mask': rot_mask}

@@ -5,7 +5,7 @@ from __future__ import print_function
 import torch
 import numpy as np
 
-from models.losses import FocalLoss, L1Loss, BinRotLoss
+from models.losses import FocalLoss, L1Loss, BinRotLoss, HeadingLoss
 from models.decode import ddd_decode
 from models.utils import _sigmoid
 from utils.debugger import Debugger
@@ -19,12 +19,13 @@ class DddLoss(torch.nn.Module):
     self.crit = torch.nn.MSELoss() if opt.mse_loss else FocalLoss()
     self.crit_reg = L1Loss()
     self.crit_rot = BinRotLoss()
+    self.crit_heading = HeadingLoss()
     self.opt = opt
   
   def forward(self, outputs, batch):
     opt = self.opt
 
-    hm_loss, dep_loss, rot_loss, dim_loss = 0, 0, 0, 0
+    hm_loss, dep_loss, rot_loss, dim_loss,heading_lossX,heading_lossY = 0, 0, 0, 0, 0, 0
     wh_loss, off_loss = 0, 0
     for s in range(opt.num_stacks):
       output = outputs[s]
@@ -48,6 +49,15 @@ class DddLoss(torch.nn.Module):
         rot_loss += self.crit_rot(output['rot'], batch['rot_mask'],
                                   batch['ind'], batch['rotbin'],
                                   batch['rotres']) / opt.num_stacks
+
+        heading_lossX += self.crit_heading(output['headingX'], batch['rot_mask'],
+                                  batch['ind'], batch['heading_binX'],
+                                  batch['heading_resX']) / opt.num_stacks
+
+        heading_lossY += self.crit_heading(output['headingY'], batch['rot_mask'],
+                                  batch['ind'], batch['heading_binY'],
+                                  batch['heading_resY']) / opt.num_stacks
+
       if opt.reg_bbox and opt.wh_weight > 0:
         wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],
                                  batch['ind'], batch['wh']) / opt.num_stacks
@@ -61,11 +71,14 @@ class DddLoss(torch.nn.Module):
     loss = loss + opt.dep_weight * dep_loss
     loss = loss + opt.dim_weight * dim_loss 
     loss = loss + opt.rot_weight * rot_loss
+    loss = loss + opt.rot_weight * heading_lossX
+    loss = loss + opt.rot_weight * heading_lossY
+
     loss = loss + opt.wh_weight * wh_loss
 
     loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss, 
                   'dim_loss': dim_loss, 'rot_loss': rot_loss, 
-                  'wh_loss': wh_loss, 'off_loss': off_loss}
+                  'wh_loss': wh_loss, 'off_loss': off_loss , 'heading_lossX':heading_lossX, 'heading_lossY':heading_lossY }
     return loss, loss_stats
 
 class DddTrainer(BaseTrainer):
@@ -74,7 +87,7 @@ class DddTrainer(BaseTrainer):
   
   def _get_losses(self, opt):
     loss_states = ['loss', 'hm_loss', 'dep_loss', 'dim_loss', 'rot_loss', 
-                   'wh_loss', 'off_loss']
+                   'wh_loss', 'off_loss','heading_lossX','heading_lossY']
     loss = DddLoss(opt)
     return loss_states, loss
 

@@ -40,11 +40,13 @@ def main(opt):
     'hm' : model.hm,
     'dep' : model.dep,
     'rot' : model.rot,
+    'headingX' : model.headingX,
+    'headingY' : model.headingY,
     'dim' : model.dim,
     'wh' : model.wh,
     'reg' : model.reg,
   }
-  frozen_layer = ['base','dla_up','ida_up','hm','reg','wh']
+  frozen_layer = ['base','dla_up','ida_up','hm','reg','wh','rot']
   for key in frozen_layer:
     for name,param in model_layers[key].named_parameters():
         param.requires_grad = False
