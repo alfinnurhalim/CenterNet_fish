@@ -171,6 +171,7 @@ class DddDataset(data.Dataset):
       # bbox_converted = self._bbs_box_to_bbox(bbs_aug[k])
       bbox = np.array(annos[k])
 
+
       # cls_id = int(self.cat_ids[ann['category_id']])
       cls_id = int(self.cat_ids[1])
       if cls_id <= -99:
@@ -187,8 +188,10 @@ class DddDataset(data.Dataset):
       if h > 0 and w > 0:
         radius = gaussian_radius((h, w))
         radius = max(0, int(radius))
+        # ct_2d = np.array(
+        #   [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
         ct = np.array(
-          [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
+          [ann['cx'],ann['cy']], dtype=np.float32)/self.opt.down_ratio
         ct_int = ct.astype(np.int32)
         if cls_id < 0:
           ignore_id = [_ for _ in range(num_classes)] \
