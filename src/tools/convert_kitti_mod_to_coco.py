@@ -104,7 +104,7 @@ for SPLIT in SPLITS:
       #   os.system('cp {} {}/'.format(ann_path, VAL_PATH))
       # anns = open(ann_path, 'r')
 
-      header = ['class','trunc','occlusion','alphax','xmin','ymin','xmax','ymax','h','w','l','x','y','z','rx','ry','rz','alphay']
+      header = ['class','trunc','occlusion','alphax','xmin','ymin','xmax','ymax','h','w','l','x','y','z','rx','ry','rz','alphay','cx','cy']
       annotation = pd.read_csv(ann_path,sep = ' ',names=header)
       
       if DEBUG:
@@ -125,6 +125,10 @@ for SPLIT in SPLITS:
         location = [float(label['x']),float(label['y']),float(label['z'])]
         rotation_x = float(label['rx'])
         rotation_y = float(label['ry'])
+
+        cx = int(label['cx'])
+        cy = int(label['cy'])
+
         # print('dim',dim,'loc',location,'rx',rotation_x,'ry',rotation_y)
         ann = {'image_id': image_id,
                'id': int(len(ret['annotations']) + 1),
@@ -138,7 +142,9 @@ for SPLIT in SPLITS:
                'occluded': occluded,
                'location': location,
                'rotation_x': rotation_x,
-               'rotation_y': rotation_y}
+               'rotation_y': rotation_y,
+               'cx':cx,
+               'cy':cy}
         ret['annotations'].append(ann)
         if DEBUG and cat_id != 'DontCare':
           # print(dim, location, rotation_y)
