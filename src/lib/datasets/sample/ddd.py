@@ -190,8 +190,21 @@ class DddDataset(data.Dataset):
         radius = max(0, int(radius))
         # ct_2d = np.array(
         #   [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
+        cx_3d = ann['cx']
+        cy_3d = ann['cy']
+
+        if cx_3d <= 0:
+          cx_3d = 1
+        if cx_3d > 512:
+          cx_3d = 512
+
+        if cy_3d <= 0:
+          cy_3d = 1
+        if cy_3d > 512:
+          cy_3d = 512
+
         ct = np.array(
-          [ann['cx'],ann['cy']], dtype=np.float32)/self.opt.down_ratio
+          [cx_3d,cy_3d], dtype=np.float32)/self.opt.down_ratio
         ct_int = ct.astype(np.int32)
         if cls_id < 0:
           ignore_id = [_ for _ in range(num_classes)] \
