@@ -78,12 +78,12 @@ class DddDataset(data.Dataset):
               # iaa.Rot90((1, 3)),
               # iaa.Fliplr(0.5),
               # iaa.Flipud(0.5),
-              iaa.AverageBlur(k=(1, 20)),
+              iaa.AverageBlur(k=(1, 8)),
               # iaa.Resize({"height": new_h, "width": new_w}),
               # iaa.Resize({"height": im_h, "width": im_w}),
           ])
 
-    # img = aug(image=img)
+    img = aug(image=img)
     # bbox_list = list()
 
     # for bbox in annos:
