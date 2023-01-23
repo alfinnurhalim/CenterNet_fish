@@ -39,42 +39,44 @@ class DddLoss(torch.nn.Module):
           opt.output_w, opt.output_h)).to(opt.device)
       
       hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
-      if opt.dep_weight > 0:
-        dep_loss += self.crit_reg(output['dep'], batch['reg_mask'],
-                                  batch['ind'], batch['dep']) / opt.num_stacks
-      if opt.dim_weight > 0:
-        dim_loss += self.crit_reg(output['dim'], batch['reg_mask'],
-                                  batch['ind'], batch['dim']) / opt.num_stacks
-      if opt.rot_weight > 0:
-        rot_loss += self.crit_rot(output['rot'], batch['rot_mask'],
-                                  batch['ind'], batch['rotbin'],
-                                  batch['rotres']) / opt.num_stacks
 
-        heading_lossX += self.crit_heading(output['headingX'], batch['rot_mask'],
-                                  batch['ind'], batch['heading_binX'],
-                                  batch['heading_resX']) / opt.num_stacks
-
-        heading_lossY += self.crit_heading(output['headingY'], batch['rot_mask'],
-                                  batch['ind'], batch['heading_binY'],
-                                  batch['heading_resY']) / opt.num_stacks
-
-      if opt.reg_bbox and opt.wh_weight > 0:
-        wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],
-                                 batch['ind'], batch['wh']) / opt.num_stacks
       if opt.reg_offset and opt.off_weight > 0:
         off_loss += self.crit_reg(output['reg'], batch['rot_mask'],
                                   batch['ind'], batch['reg']) / opt.num_stacks
+
+      # if opt.dep_weight > 0:
+      #   dep_loss += self.crit_reg(output['dep'], batch['reg_mask'],
+      #                             batch['ind'], batch['dep']) / opt.num_stacks
+      # if opt.dim_weight > 0:
+      #   dim_loss += self.crit_reg(output['dim'], batch['reg_mask'],
+      #                             batch['ind'], batch['dim']) / opt.num_stacks
+      # if opt.rot_weight > 0:
+      #   rot_loss += self.crit_rot(output['rot'], batch['rot_mask'],
+      #                             batch['ind'], batch['rotbin'],
+      #                             batch['rotres']) / opt.num_stacks
+
+      #   heading_lossX += self.crit_heading(output['headingX'], batch['rot_mask'],
+      #                             batch['ind'], batch['heading_binX'],
+      #                             batch['heading_resX']) / opt.num_stacks
+
+      #   heading_lossY += self.crit_heading(output['headingY'], batch['rot_mask'],
+      #                             batch['ind'], batch['heading_binY'],
+      #                             batch['heading_resY']) / opt.num_stacks
+
+      # if opt.reg_bbox and opt.wh_weight > 0:
+      #   wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],
+      #                            batch['ind'], batch['wh']) / opt.num_stacks
+
     loss = opt.hm_weight * hm_loss
     loss = loss + opt.off_weight * off_loss
 
     # other head
-    loss = loss + opt.dep_weight * dep_loss
-    loss = loss + opt.dim_weight * dim_loss 
-    loss = loss + opt.rot_weight * rot_loss
-    loss = loss + opt.rot_weight * heading_lossX
-    loss = loss + opt.rot_weight * heading_lossY
-
-    loss = loss + opt.wh_weight * wh_loss
+    # loss = loss + opt.dep_weight * dep_loss
+    # loss = loss + opt.dim_weight * dim_loss 
+    # loss = loss + opt.rot_weight * rot_loss
+    # loss = loss + opt.rot_weight * heading_lossX
+    # loss = loss + opt.rot_weight * heading_lossY
+    # loss = loss + opt.wh_weight * wh_loss
 
     loss_stats = {'loss': loss, 'hm_loss': hm_loss, 'dep_loss': dep_loss, 
                   'dim_loss': dim_loss, 'rot_loss': rot_loss, 
