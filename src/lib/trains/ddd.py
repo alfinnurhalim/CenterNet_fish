@@ -25,8 +25,8 @@ class DddLoss(torch.nn.Module):
   def forward(self, outputs, batch):
     opt = self.opt
 
-    hm_loss, dep_loss, rot_loss, dim_loss,heading_lossX,heading_lossY = 0, 0, 0, 0, 0, 0
-    wh_loss, off_loss = 0, 0
+    hm_loss, dep_loss, rot_loss, dim_loss,heading_lossX,heading_lossY = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    wh_loss, off_loss = 0.0, 0.0
     for s in range(opt.num_stacks):
       output = outputs[s]
       output['hm'] = _sigmoid(output['hm'])
@@ -68,11 +68,11 @@ class DddLoss(torch.nn.Module):
     loss = loss + opt.off_weight * off_loss
 
     # other head
-    # loss = loss + opt.dep_weight * dep_loss
-    # loss = loss + opt.dim_weight * dim_loss 
-    # loss = loss + opt.rot_weight * rot_loss
-    # loss = loss + opt.rot_weight * heading_lossX
-    # loss = loss + opt.rot_weight * heading_lossY
+    loss = loss + opt.dep_weight * dep_loss
+    loss = loss + opt.dim_weight * dim_loss 
+    loss = loss + opt.rot_weight * rot_loss
+    loss = loss + opt.rot_weight * heading_lossX
+    loss = loss + opt.rot_weight * heading_lossY
 
     loss = loss + opt.wh_weight * wh_loss
 
