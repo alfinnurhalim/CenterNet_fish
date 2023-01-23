@@ -68,11 +68,11 @@ class DddLoss(torch.nn.Module):
     loss = loss + opt.off_weight * off_loss
 
     # other head
-    loss = loss + opt.dep_weight * dep_loss
-    loss = loss + opt.dim_weight * dim_loss 
-    loss = loss + opt.rot_weight * rot_loss
-    loss = loss + opt.rot_weight * heading_lossX
-    loss = loss + opt.rot_weight * heading_lossY
+    # loss = loss + opt.dep_weight * dep_loss
+    # loss = loss + opt.dim_weight * dim_loss 
+    # loss = loss + opt.rot_weight * rot_loss
+    # loss = loss + opt.rot_weight * heading_lossX
+    # loss = loss + opt.rot_weight * heading_lossY
 
     loss = loss + opt.wh_weight * wh_loss
 
