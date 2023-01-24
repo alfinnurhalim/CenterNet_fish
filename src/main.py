@@ -34,23 +34,25 @@ def main(opt):
 # 
   print('Freezing layer')
   model_layers = {
-    'base' : model.base,
-    'dla_up' : model.dla_up,
-    'ida_up' : model.ida_up,
-    'hm' : model.hm,
-    'dep' : model.dep,
-    'rot' : model.rot,
-    'headingX' : model.headingX,
-    'headingY' : model.headingY,
-    'dim' : model.dim,
-    'wh' : model.wh,
-    'reg' : model.reg,
+    'base' : [model.base,False],
+    'dla_up' : [model.dla_up,False],
+    'ida_up' : [model.ida_up,False],
+    'hm' : [model.hm,False],
+    'dep' : [model.dep,True],
+    'rot' : [model.rot,True],
+    'headingX' : [model.headingX,True],
+    'headingY' : [model.headingY,True],
+    'dim' : [model.dim,True],
+    'wh' : [model.wh,False],
+    'reg' : [model.reg,False],
   }
-  frozen_layer = ['base','dla_up','ida_up','dep','rot','headingX','headingY','dim']
+  # frozen_layer = ['base','dla_up','ida_up','dep','rot','headingX','headingY','dim']
   
-  for key in frozen_layer:
-    for name,param in model_layers[key].named_parameters():
-        param.requires_grad = False
+  for key in model_layers.keys():
+    layer = model_layers[key][0]
+    is_trainable = model_layers[key][1]
+    for name,param in layer.named_parameters():
+        param.requires_grad = is_trainable
 
   for name,param in model.named_parameters():
     print(name,param.requires_grad)
