@@ -246,6 +246,7 @@ class HeadingLoss(nn.Module):
     return loss
 
 def compute_heading_loss(output, target_bin, target_res, mask,num_heading_bin):
+    num_heading_bin = 2
     output = output.view(-1, num_heading_bin*2)
     target_bin = target_bin.view(-1, 1)
     target_res = target_res.view(-1, 1)
