@@ -13,6 +13,8 @@ from utils.post_process import ddd_post_process
 from utils.oracle_utils import gen_oracle_map
 from .base_trainer import BaseTrainer
 
+num_heading_bin = 2
+
 class DddLoss(torch.nn.Module):
   def __init__(self, opt):
     super(DddLoss, self).__init__()
@@ -57,11 +59,11 @@ class DddLoss(torch.nn.Module):
 
       heading_lossX += self.crit_heading(output['headingX'], batch['rot_mask'],
                                 batch['ind'], batch['heading_binX'],
-                                batch['heading_resX']) / opt.num_stacks
+                                batch['heading_resX'],num_heading_bin) / opt.num_stacks
 
       heading_lossY += self.crit_heading(output['headingY'], batch['rot_mask'],
                                 batch['ind'], batch['heading_binY'],
-                                batch['heading_resY']) / opt.num_stacks
+                                batch['heading_resY'],num_heading_bin) / opt.num_stacks
 
       # if opt.reg_bbox and opt.wh_weight > 0:
       wh_loss += self.crit_reg(output['wh'], batch['rot_mask'],

@@ -240,27 +240,27 @@ class HeadingLoss(nn.Module):
   def __init__(self):
     super(HeadingLoss, self).__init__()
   
-  def forward(self, output, mask, ind, rotbin, rotres):
+  def forward(self, output, mask, ind, rotbin, rotres,num_heading_bin):
     pred = _transpose_and_gather_feat(output, ind)
-    loss = compute_heading_loss(pred, rotbin, rotres, mask)
+    loss = compute_heading_loss(pred, rotbin, rotres, mask,num_heading_bin)
     return loss
 
-def compute_heading_loss(output, target_bin, target_res, mask):
-    output = output.view(-1, 24)
+def compute_heading_loss(output, target_bin, target_res, mask,num_heading_bin):
+    output = output.view(-1, num_heading_bin*2)
     target_bin = target_bin.view(-1, 1)
     target_res = target_res.view(-1, 1)
     mask = mask.view(-1, 1)
 
-    heading_input_cls = output[:, 0:12]
+    heading_input_cls = output[:, 0:num_heading_bin]
     mask_cls = mask.expand_as(heading_input_cls)
     heading_input_cls = heading_input_cls * mask_cls.float()
     cls_loss = F.cross_entropy(heading_input_cls, target_bin[:,0], reduction='mean')
 
-    heading_input_res = output[:, 12:24]
+    heading_input_res = output[:, num_heading_bin:num_heading_bin*2]
     mask_res = mask.expand_as(heading_input_res)
     heading_input_res = heading_input_res * mask_res.float()
     
-    cls_onehot = torch.zeros(target_bin.shape[0], 12).cuda().scatter_(dim=1, index=target_bin.view(-1, 1), value=1)
+    cls_onehot = torch.zeros(target_bin.shape[0], num_heading_bin).cuda().scatter_(dim=1, index=target_bin.view(-1, 1), value=1)
     heading_input_res = torch.sum(heading_input_res * cls_onehot, 1)
     reg_loss = F.l1_loss(heading_input_res, target_res, reduction='mean')
 
