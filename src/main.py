@@ -38,11 +38,11 @@ def main(opt):
     'dla_up' : [model.dla_up,False],
     'ida_up' : [model.ida_up,False],
     'hm' : [model.hm,False],
-    'dep' : [model.dep,True],
+    'dep' : [model.dep,False],
     'rot' : [model.rot,True],
     'headingX' : [model.headingX,True],
     'headingY' : [model.headingY,True],
-    'dim' : [model.dim,True],
+    'dim' : [model.dim,False],
     'wh' : [model.wh,False],
     'reg' : [model.reg,False],
   }
@@ -54,23 +54,23 @@ def main(opt):
     for name,param in layer.named_parameters():
         param.requires_grad = is_trainable
 
-        # center head
-        if name=='hm':
-          opt.hm_weight = 1 if is_trainable else 0
-        if name=='reg':
-          opt.reg_loss = 1 if is_trainable else 0
+        # # center head
+        # if name=='hm':
+        #   opt.hm_weight = 1 if is_trainable else 0
+        # if name=='reg':
+        #   opt.off_weight = 1 if is_trainable else 0
 
-        # 3D head
-        if name=='dep':
-          opt.dep_weight = 1 if is_trainable else 0
-        if name=='dim':
-          opt.dim_weight = 1 if is_trainable else 0
-        if name=='rot':
-          opt.rot_weight = 1 if is_trainable else 0
+        # # 3D head
+        # if name=='dep':
+        #   opt.dep_weight = 1 if is_trainable else 0
+        # if name=='dim':
+        #   opt.dim_weight = 1 if is_trainable else 0
+        # if name=='rot':
+        #   opt.rot_weight = 1 if is_trainable else 0
 
-        # 2D head
-        if name=='wh':
-          opt.wh_weight = 1 if is_trainable else 0
+        # # 2D head
+        # if name=='wh':
+        #   opt.wh_weight = 1 if is_trainable else 0
 
   for name,param in model.named_parameters():
     print(name,param.requires_grad)

@@ -16,19 +16,26 @@ import random
 num_heading_bin = 2  # hyper param
 
 def get_heading_angle(heading):
-    heading = heading.reshape([24,])
-    heading_bin, heading_res = heading[0:12], heading[12:24]
+    heading = heading.reshape([num_heading_bin*2,])
+    heading_bin, heading_res = heading[0:num_heading_bin], heading[num_heading_bin:num_heading_bin*2]
     cls = np.argmax(heading_bin)
     res = heading_res[cls]
     return class2angle(cls, res, to_label_format=True)
 
 def angle2class(angle):
     ''' Convert continuous angle to discrete class and residual. '''
+
+    # truncate
     angle = angle % (2 * np.pi)
     assert (angle >= 0 and angle <= 2 * np.pi)
+
+    # range for every class
     angle_per_class = 2 * np.pi / float(num_heading_bin)
+
+    # shifting
     shifted_angle = (angle + angle_per_class / 2) % (2 * np.pi)
-    class_id = int(shifted_angle / angle_per_class)
+    
+    class_id = int(shifted_angle / angle_per_class) + 1
     residual_angle = shifted_angle - (class_id * angle_per_class + angle_per_class / 2)
     return class_id, residual_angle
 
@@ -38,10 +45,57 @@ def class2angle(cls, residual, to_label_format=False):
     angle_per_class = 2 * np.pi / float(num_heading_bin)
     angle_center = cls * angle_per_class
     angle = angle_center + residual
+
     if to_label_format and angle > np.pi:
         angle = angle - 2 * np.pi
     return angle
 
+class Bin(object):
+    """docstring for Bin"""
+    def __init__(self, angle_min, angle_max,overlap=0.0001):
+        self.overlap = overlap
+
+        self.min = angle_min - overlap
+        self.max = angle_max + overlap
+
+        self.range = self._get_range()
+        self.center = self._get_center()
+
+    def _get_center(self):
+        return self.min + abs(self.max - self.min)/2
+
+    def _get_range(self):
+        return abs(self.max - self.min)%(np.pi)
+
+    def is_between(self,angle):
+        angle = angle%(np.pi)
+
+        return (angle > self.min) and (angle < self.max)
+
+    def get_orientation(self,angle):
+        angle = angle%(np.pi)
+
+        if not self.is_between(angle):
+            return [0,0]
+
+        angle_diff = angle - self.center
+
+        orient = [np.cos(angle_diff), np.sin(angle_diff)]
+
+        return orient
+
+    def get_angle(self,orient):
+        cos = orient[0]
+        sin = orient[1]
+        
+        if sin == 0 and cos == 0:
+            return 0 
+
+        angle = np.arctan2(sin, cos)
+        angle = angle + self.center
+
+        return angle
+        
 def flip(img):
   return img[:, :, ::-1].copy()  
 
