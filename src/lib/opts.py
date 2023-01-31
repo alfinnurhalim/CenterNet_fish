@@ -105,7 +105,7 @@ class opts(object):
                              help='multi scale test augmentation.')
     self.parser.add_argument('--nms', action='store_true',
                              help='run nms in testing.')
-    self.parser.add_argument('--K', type=int, default=100,
+    self.parser.add_argument('--K', type=int, default=40,
                              help='max number of output objects.') 
     self.parser.add_argument('--not_prefetch_test', action='store_true',
                              help='not use parallal data pre-processing.')
@@ -306,7 +306,7 @@ class opts(object):
         opt.heads.update({'reg_t': 2, 'reg_l': 2, 'reg_b': 2, 'reg_r': 2})
     elif opt.task == 'ddd':
       # assert opt.dataset in ['gta', 'kitti', 'viper']
-      opt.heads = {'hm': opt.num_classes, 'dep': 1, 'rot': 8, 'dim': 3, 'headingX':4, 'headingY':4}
+      opt.heads = {'hm': opt.num_classes, 'dep': 1, 'rot': 1, 'dim': 3}
       if opt.reg_bbox:
         opt.heads.update(
           {'wh': 2})
@@ -328,6 +328,9 @@ class opts(object):
         opt.heads.update({'hm_hp': 17})
       if opt.reg_hp_offset:
         opt.heads.update({'hp_offset': 2})
+    elif opt.task == 'fish3d':
+      # assert opt.dataset in ['gta', 'kitti', 'viper']
+      opt.heads = {'hm': opt.num_classes, 'dep': 1, 'rot': 2, 'dim': 3,'reg': 2}
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)
@@ -348,6 +351,9 @@ class opts(object):
         'flip_idx': [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], 
                      [11, 12], [13, 14], [15, 16]]},
       'ddd': {'default_resolution': [512, 512], 'num_classes': 3, 
+                'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225],
+                'dataset': 'kitti'},
+      'fish3d': {'default_resolution': [512, 512], 'num_classes': 1, 
                 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225],
                 'dataset': 'kitti'},
     }

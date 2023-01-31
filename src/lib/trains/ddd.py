@@ -13,7 +13,7 @@ from utils.post_process import ddd_post_process
 from utils.oracle_utils import gen_oracle_map
 from .base_trainer import BaseTrainer
 
-num_heading_bin = 2
+num_heading_bin = 12
 
 class DddLoss(torch.nn.Module):
   def __init__(self, opt):

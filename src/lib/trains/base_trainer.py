@@ -64,7 +64,7 @@ class BaseTrainer(object):
       data_time.update(time.time() - end)
 
       for k in batch:
-        if k != 'meta':
+        if k != 'meta' and k != 'ct':
           batch[k] = batch[k].to(device=opt.device, non_blocking=True)    
       output, loss, loss_stats = model_with_loss(batch)
       loss = loss.mean()
@@ -102,12 +102,6 @@ class BaseTrainer(object):
     ret = {k: v.avg for k, v in avg_loss_stats.items()}
     ret['time'] = bar.elapsed_td.total_seconds() / 60.
     return ret, results
-  
-  def debug(self, batch, output, iter_id):
-    raise NotImplementedError
-
-  def save_result(self, output, batch, results):
-    raise NotImplementedError
 
   def _get_losses(self, opt):
     raise NotImplementedError

@@ -40,12 +40,6 @@ class DddDataset(data.Dataset):
     scale_range = (0.4, 0.6)
     output_size = (512,512)
 
-    # only for 2d
-    
-    # aug_prob = 1
-    # if aug_prob > 0.5:
-    # img,annos = self._aug_mosaic(output_size,scale_range,index)
-    # else:
     img_id = self.images[index]
     img_info = self.coco.loadImgs(ids=[img_id])[0]
     img_path = os.path.join(self.img_dir, img_info['file_name'])
@@ -57,77 +51,26 @@ class DddDataset(data.Dataset):
 
     num_objs = min(len(annos), self.max_objs)
 
-    # lower_bound = 1
-    # upper_bound = 5
-    # ratio = random.uniform(lower_bound, upper_bound)
-
-    
-    # im_h,im_w,_ = img.shape
-    # new_h = int(im_h/ratio)
-    # new_w = int(im_w/ratio)
-
-    # aug = iaa.Sequential([
-    #         iaa.Multiply((0.5, 1.1)),
-    #         iaa.AverageBlur(k=(1, 7)),
-    #         iaa.Resize({"height": new_h, "width": new_w}),
-    #         iaa.Resize({"height": im_h, "width": im_w}),
-    #     ] )
-
     aug = iaa.Sequential([
               iaa.AddToHueAndSaturation((-40, 30), per_channel=True),
-              # iaa.Rot90((1, 3)),
-              # iaa.Fliplr(0.5),
-              # iaa.Flipud(0.5),
               iaa.AverageBlur(k=(1, 8)),
-              # iaa.Resize({"height": new_h, "width": new_w}),
-              # iaa.Resize({"height": im_h, "width": im_w}),
           ])
 
     img = aug(image=img)
-    # bbox_list = list()
-
-    # for bbox in annos:
-    #   x1 = bbox[0]
-    #   y1 = bbox[1]
-    #   x2 = bbox[2]
-    #   y2 = bbox[3]
-
-    #   bbox = BoundingBox(x1=x1,y1=y1,x2=x2,y2=y2)
-    #   bbox_list.append(bbox)
-
-    # bbs = BoundingBoxesOnImage(bbox_list,shape=img.shape)
-    # img, bbs_aug = aug(image=img, bounding_boxes=bbs)
-
-    # need to uncomment this for 3d
-    # if 'calib' in img_info:
-    #   calib = np.array(img_info['calib'], dtype=np.float32)
-    # else:
-    #   calib = self.calib
 
     height, width = img.shape[0], img.shape[1]
     c = np.array([img.shape[1] / 2., img.shape[0] / 2.])
-    if self.opt.keep_res:
-      s = np.array([self.opt.input_w, self.opt.input_h], dtype=np.int32)
-    else:
-      s = np.array([width, height], dtype=np.int32)
+    s = np.array([width, height], dtype=np.int32)
     
-    aug = False
-    if self.split == 'train' and np.random.random() < self.opt.aug_ddd:
-      aug = True
-      sf = self.opt.scale
-      cf = self.opt.shift
-      s = s * np.clip(np.random.randn()*sf + 1, 1 - sf, 1 + sf)
-      c[0] += img.shape[1] * np.clip(np.random.randn()*cf, -2*cf, 2*cf)
-      c[1] += img.shape[0] * np.clip(np.random.randn()*cf, -2*cf, 2*cf)
 
     trans_input = get_affine_transform(
       c, s, 0, [self.opt.input_w, self.opt.input_h])
+
     inp = cv2.warpAffine(img, trans_input, 
                          (self.opt.input_w, self.opt.input_h),
                          flags=cv2.INTER_LINEAR)
     inp = (inp.astype(np.float32) / 255.)
-    # if self.split == 'train' and not self.opt.no_color_aug:
-    #   color_aug(self._data_rng, inp, self._eig_val, self._eig_vec)
+
     inp = (inp - self.mean) / self.std
     inp = inp.transpose(2, 0, 1)
 
@@ -146,6 +89,9 @@ class DddDataset(data.Dataset):
 
     rotbin = np.zeros((self.max_objs, 2), dtype=np.int64)
     rotres = np.zeros((self.max_objs, 2), dtype=np.float32)
+
+    roty = np.zeros((self.max_objs, 1), dtype=np.float32)
+    rotx = np.zeros((self.max_objs, 1), dtype=np.float32)
     
     heading_binX = np.zeros((self.max_objs, 1), dtype=np.int64)
     heading_resX = np.zeros((self.max_objs, 1), dtype=np.float32)
@@ -167,17 +113,11 @@ class DddDataset(data.Dataset):
 
     for k in range(num_objs):
       ann = img_annos[k]
-      # bbox = self._coco_box_to_bbox(ann['bbox'])
-      # bbox_converted = self._bbs_box_to_bbox(bbs_aug[k])
       bbox = np.array(annos[k])
 
-
-      # cls_id = int(self.cat_ids[ann['category_id']])
       cls_id = int(self.cat_ids[1])
       if cls_id <= -99:
         continue
-      # if flipped:
-      #   bbox[[0, 2]] = width - bbox[[2, 0]] - 1
 
       bbox[:2] = affine_transform(bbox[:2], trans_output)
       bbox[2:] = affine_transform(bbox[2:], trans_output)
@@ -189,46 +129,20 @@ class DddDataset(data.Dataset):
         radius = gaussian_radius((h, w))
         radius = max(0, int(radius))
         
-        # cx_3d = ann['cx']
-        # cy_3d = ann['cy']
+        cx_3d = ann['cx']
+        cy_3d = ann['cy']
 
-        # if cx_3d <= 0:
-        #   cx_3d = 1
-        # if cx_3d > 512:
-        #   cx_3d = 512
-
-        # if cy_3d <= 0:
-        #   cy_3d = 1
-        # if cy_3d > 512:
-        #   cy_3d = 512
-
-        # ct = np.array(
-        #   [cx_3d,cy_3d], dtype=np.float32)/self.opt.down_ratio
         ct = np.array(
-          [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
+          [cx_3d,cy_3d], dtype=np.float32)/self.opt.down_ratio
+        # ct2 = np.array(
+        #   [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
+        # print(ct,ct2)
+
         ct_int = ct.astype(np.int32)
-        if cls_id < 0:
-          ignore_id = [_ for _ in range(num_classes)] \
-                      if cls_id == - 1 else  [- cls_id - 2]
-          if self.opt.rect_mask:
-            hm[ignore_id, int(bbox[1]): int(bbox[3]) + 1, 
-              int(bbox[0]): int(bbox[2]) + 1] = 0.9999
-          else:
-            for cc in ignore_id:
-              draw_gaussian(hm[cc], ct, radius)
-            hm[ignore_id, ct_int[1], ct_int[0]] = 0.9999
-          continue
         draw_gaussian(hm[cls_id], ct, radius)
 
         wh[k] = 1. * w, 1. * h
-        # gt_det.append([k, ct[0], ct[1], bbox, bbox_converted])
-        # gt_det.append([ct[0], ct[1], 1] + \
-        #               self._alpha_to_8(self._convert_alpha(ann['alphax'])) + \
-        #               [ann['depth']] + (np.array(ann['dim']) / 1).tolist() + [cls_id])
         gt_det.append([ct_int[1], ct_int[0]])
-        # if self.opt.reg_bbox:
-        #   gt_det[-1] = gt_det[-1][:-1] + [w, h] + [gt_det[-1][-1]]
-        # if (not self.opt.car_only) or cls_id == 1: # Only estimate ADD for cars !!!
 
         alphaX = ann['alphax'] % (2*np.pi)
         alphaY = ann['alphay'] % (2*np.pi)
@@ -237,37 +151,39 @@ class DddDataset(data.Dataset):
         heading_binY[k], heading_resY[k] = angle2class(alphaY)
 
         # BINNING
-        bot_thr = np.radians(30)
-        up_thr = np.radians(150)
+        # bot_thr = np.radians(30)
+        # up_thr = np.radians(150)
 
-        if alphaX < bot_thr or alphaX > up_thr:
+        # NO OVERLAPPING
+        bin_center = np.pi
+
+        if alphaX < bin_center and alphaX > 0:
             bin_class = 0
             rotbin[k, bin_class] = 1
             rotres[k, bin_class] = alphaX 
 
-        if alphaX < -bot_thr or alphaX > -up_thr:
+        if alphaX < 2*bin_center and alphaX > bin_center:
             bin_class = 1
             rotbin[k, bin_class] = 1
             rotres[k, bin_class] = alphaX 
 
         dep[k] = ann['depth']
         dim[k] = ann['dim']
+        roty[k] = alphaY
+        rotx[k] = alphaX
 
-        # dep[k] = 0
-        # dim[k] = [0,0,0]
-
-        # print('        cat dim', cls_id, dim[k])
         ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
         reg[k] = ct - ct_int
-        reg_mask[k] = 1 if not aug else 0
+        reg_mask[k] = 1 
         rot_mask[k] = 1
-    # print('gt_det', gt_det)
-    # print('')
+
     ret = {'input': inp, 
             'hm': hm, 
             'dep': dep, 
             'dim': dim, 
-            'ind': ind, 
+            'ind': ind,
+            'roty':roty,
+            'rotx':rotx,
             'rotbin': rotbin, 
             'rotres': rotres,
             'heading_binX': heading_binX, 
@@ -277,9 +193,6 @@ class DddDataset(data.Dataset):
             'reg_mask': reg_mask,
             'rot_mask': rot_mask}
 
-    # ret = {'input': inp, 'hm': hm, 'dep': 0, 'dim': np.array([0,0,0]), 'ind': ind, 
-    #        'rotbin': rotbin, 'rotres': rotres, 'reg_mask': reg_mask,
-    #        'rot_mask': rot_mask}
     if self.opt.reg_bbox:
       ret.update({'wh': wh})
     if self.opt.reg_offset:

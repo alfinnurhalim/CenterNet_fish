@@ -423,6 +423,40 @@ def exct_decode(
 
     return detections
 
+def fish3d_decode(heat, rot, depth, dim, reg=None, K=40):
+    batch, cat, height, width = heat.size()
+    heat = _nms(heat)
+      
+    scores, inds, clses, ys, xs = _topk(heat, K=K)
+    if reg is not None:
+      reg = _transpose_and_gather_feat(reg, inds)
+      reg = reg.view(batch, K, 2)
+      xs = xs.view(batch, K, 1) + reg[:, :, 0:1]
+      ys = ys.view(batch, K, 1) + reg[:, :, 1:2]
+    else:
+      xs = xs.view(batch, K, 1) + 0.5
+      ys = ys.view(batch, K, 1) + 0.5
+      
+    rot = _transpose_and_gather_feat(rot, inds)
+    rot = rot.view(batch, K, 2)
+
+    depth = _transpose_and_gather_feat(depth, inds)
+    depth = depth.view(batch, K, 1)
+
+    dim = _transpose_and_gather_feat(dim, inds)
+    dim = dim.view(batch, K, 3)
+
+    clses  = clses.view(batch, K, 1).float()
+    scores = scores.view(batch, K, 1)
+
+    xs = xs.view(batch, K, 1)
+    ys = ys.view(batch, K, 1)
+
+    detections = torch.cat(
+        [xs, ys, scores, rot, depth, dim, clses], dim=2)
+      
+    return detections
+
 def ddd_decode(heat, rot, depth, dim, headX,headY, wh=None, reg=None, K=40):
     batch, cat, height, width = heat.size()
     # heat = torch.sigmoid(heat)

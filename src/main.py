@@ -34,17 +34,17 @@ def main(opt):
 # 
   print('Freezing layer')
   model_layers = {
-    'base' : [model.base,False],
-    'dla_up' : [model.dla_up,False],
-    'ida_up' : [model.ida_up,False],
-    'hm' : [model.hm,False],
-    'dep' : [model.dep,False],
+    'base' : [model.base,True],
+    'dla_up' : [model.dla_up,True],
+    'ida_up' : [model.ida_up,True],
+    'hm' : [model.hm,True],
+    'dep' : [model.dep,True],
     'rot' : [model.rot,True],
-    'headingX' : [model.headingX,True],
-    'headingY' : [model.headingY,True],
-    'dim' : [model.dim,False],
-    'wh' : [model.wh,False],
-    'reg' : [model.reg,False],
+    # 'headingX' : [model.headingX,False],
+    # 'headingY' : [model.headingY,False],
+    'dim' : [model.dim,True],
+    # 'wh' : [model.wh,True],
+    'reg' : [model.reg,True],
   }
   frozen_layer = ['dep','rot','headingX','headingY','dim']
   

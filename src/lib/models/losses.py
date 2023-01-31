@@ -246,13 +246,15 @@ class HeadingLoss(nn.Module):
     return loss
 
 def compute_heading_loss(output, target_bin, target_res, mask,num_heading_bin):
-    num_heading_bin = 2
+
+    num_heading_bin = 12
     output = output.view(-1, num_heading_bin*2)
     target_bin = target_bin.view(-1, 1)
     target_res = target_res.view(-1, 1)
     mask = mask.view(-1, 1)
 
     heading_input_cls = output[:, 0:num_heading_bin]
+    print(mask.shape,heading_input_cls.shape)
     mask_cls = mask.expand_as(heading_input_cls)
     heading_input_cls = heading_input_cls * mask_cls.float()
     cls_loss = F.cross_entropy(heading_input_cls, target_bin[:,0], reduction='mean')
