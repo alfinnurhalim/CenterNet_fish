@@ -34,7 +34,7 @@ class Fish3dDataset(data.Dataset):
     annos = [self._coco_box_to_bbox(ann['bbox']) for ann in img_annos]
 
     num_objs = min(len(annos), self.max_objs)
-    ct_list = []
+    meta = dict()
 
     #  IMG AUG
     aug = iaa.Sequential([
@@ -83,7 +83,7 @@ class Fish3dDataset(data.Dataset):
           [cx_3d,cy_3d], dtype=np.float32)/self.opt.down_ratio
         ct_int = ct.astype(np.int32)
 
-        ct_list.append(ct_int)
+        meta['center'] = ct_int
         radius = gaussian_radius((h, w))
         radius = max(0, int(radius))
         
@@ -110,6 +110,6 @@ class Fish3dDataset(data.Dataset):
             'rot':rot,
             'reg_mask': reg_mask,
             'reg' : reg,
-            'ct': ct_list}
+            'meta': meta}
 
     return ret
