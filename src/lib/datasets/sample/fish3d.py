@@ -95,7 +95,8 @@ class Fish3dDataset(data.Dataset):
 
         dep[k] = ann['depth']
         dim[k] = ann['dim']
-        rot[k] = [alphaX,alphaY]
+        rot[k] = [np.sin(alphaX),np.cos(alphaX),
+                  np.sin(alphaY),np.cos(alphaY)]
 
         ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
         reg[k] = ct - ct_int

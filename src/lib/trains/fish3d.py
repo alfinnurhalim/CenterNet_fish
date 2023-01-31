@@ -29,7 +29,6 @@ class Fish3dLoss(torch.nn.Module):
     hm_loss += self.crit(output['hm'], batch['hm'])
     off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
                               batch['ind'], batch['reg'])
-#
     dep_loss += self.crit_reg(output['dep'], batch['reg_mask'],
                               batch['ind'], batch['dep'])
     dim_loss += self.crit_reg(output['dim'], batch['reg_mask'],

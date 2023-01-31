@@ -330,7 +330,7 @@ class opts(object):
         opt.heads.update({'hp_offset': 2})
     elif opt.task == 'fish3d':
       # assert opt.dataset in ['gta', 'kitti', 'viper']
-      opt.heads = {'hm': opt.num_classes, 'dep': 1, 'rot': 2, 'dim': 3,'reg': 2}
+      opt.heads = {'hm': opt.num_classes, 'dep': 1, 'rot': 4, 'dim': 3,'reg': 2}
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)
