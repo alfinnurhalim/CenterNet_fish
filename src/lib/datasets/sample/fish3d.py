@@ -55,7 +55,7 @@ class Fish3dDataset(data.Dataset):
 
     dep = np.zeros((self.max_objs, 1), dtype=np.float32)
     dim = np.zeros((self.max_objs, 3), dtype=np.float32)
-    rot = np.zeros((self.max_objs, 2), dtype=np.float32)
+    rot = np.zeros((self.max_objs, 4), dtype=np.float32)
 
     reg = np.zeros((self.max_objs, 2), dtype=np.float32)
     reg_mask = np.zeros((self.max_objs), dtype=np.uint8)
