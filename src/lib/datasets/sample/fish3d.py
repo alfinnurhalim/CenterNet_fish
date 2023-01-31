@@ -42,7 +42,8 @@ class Fish3dDataset(data.Dataset):
               iaa.AverageBlur(k=(1, 8)),
           ])
 
-    img = aug(image=img)
+    # no aug
+    # img = aug(image=img)
 
     inp = (img.astype(np.float32) / 255.)
 
