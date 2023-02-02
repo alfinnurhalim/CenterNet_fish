@@ -113,7 +113,6 @@ class Fish3dDataset(data.Dataset):
             'dim': dim, 
             'rot':rot,
             'reg_mask': reg_mask,
-            'reg' : reg,
-            'meta': meta}
+            'reg' : reg}
 
     return ret
