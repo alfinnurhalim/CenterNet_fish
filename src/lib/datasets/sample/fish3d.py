@@ -35,6 +35,7 @@ class Fish3dDataset(data.Dataset):
 
     num_objs = min(len(annos), self.max_objs)
     meta = dict()
+    meta['center'] = list()
 
     #  IMG AUG
     aug = iaa.Sequential([
@@ -56,7 +57,7 @@ class Fish3dDataset(data.Dataset):
 
     dep = np.zeros((self.max_objs, 1), dtype=np.float32)
     dim = np.zeros((self.max_objs, 3), dtype=np.float32)
-    rot = np.zeros((self.max_objs, 4), dtype=np.float32)
+    rot = np.zeros((self.max_objs, 2), dtype=np.float32)
 
     reg = np.zeros((self.max_objs, 2), dtype=np.float32)
     reg_mask = np.zeros((self.max_objs), dtype=np.uint8)
@@ -84,20 +85,21 @@ class Fish3dDataset(data.Dataset):
           [cx_3d,cy_3d], dtype=np.float32)/self.opt.down_ratio
         ct_int = ct.astype(np.int32)
 
-        meta['center'] = ct_int
+        meta['center'].append(ct_int)
         radius = gaussian_radius((h, w))
         radius = max(0, int(radius))
         
         draw_gaussian(hm[cls_id], ct, radius)
 
         # 3d prop
-        alphaX = ann['alphax'] % (2*np.pi)
-        alphaY = ann['alphay'] % (2*np.pi)
+        # remove negative, normalize the range to 0-1
+        angle_max = (2*np.pi)
+        alphaX = ((ann['alphax'] + angle_max) % angle_max)/angle_max
+        alphaY = ((ann['alphay'] + angle_max) % angle_max)/angle_max
 
         dep[k] = ann['depth']
         dim[k] = ann['dim']
-        rot[k] = [np.sin(alphaX),np.cos(alphaX),
-                  np.sin(alphaY),np.cos(alphaY)]
+        rot[k] = [alphaX,alphaY]
 
         ind[k] = ct_int[1] * self.opt.output_w + ct_int[0]
         reg[k] = ct - ct_int
