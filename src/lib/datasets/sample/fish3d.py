@@ -93,9 +93,9 @@ class Fish3dDataset(data.Dataset):
 
         # 3d prop
         # remove negative, normalize the range to 0-1
-        # angle_max = (2*np.pi)
-        # alphaX = ((ann['alphax'] + angle_max) % angle_max)/angle_max
-        # alphaY = ((ann['alphay'] + angle_max) % angle_max)/angle_max
+        angle_max = (2*np.pi)
+        alphaX = ((ann['alphax'] + angle_max) % angle_max)
+        alphaY = ((ann['alphay'] + angle_max) % angle_max)
 
         dep[k] = ann['depth']
         dim[k] = ann['dim']
