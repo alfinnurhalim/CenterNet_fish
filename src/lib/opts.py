@@ -353,7 +353,7 @@ class opts(object):
       'ddd': {'default_resolution': [512, 512], 'num_classes': 3, 
                 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225],
                 'dataset': 'kitti'},
-      'fish3d': {'default_resolution': [512, 512], 'num_classes': 1, 
+      'fish3d': {'default_resolution': [512, 512], 'num_classes': 3, 
                 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225],
                 'dataset': 'kitti'},
     }
