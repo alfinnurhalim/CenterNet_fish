@@ -46,7 +46,6 @@ def main(opt):
     # 'wh' : [model.wh,True],
     'reg' : [model.reg,True],
   }
-  frozen_layer = ['dep','rot','headingX','headingY','dim']
   
   for key in model_layers.keys():
     layer = model_layers[key][0]
